@@ -10,7 +10,10 @@ DATA_NASCIMENTO=os.getenv("DATA_NASCIMENTO")
 SENHA=os.getenv("SENHA")
 ASSINATURA=os.getenv("ASSINATURA")
 
-# print(CPF)
+VALOR_LIMITE = 13.80
+QUANTIDADE = 1000
+
+
 driver = get_headless_selenium_webdriver()
 session_id = driver.session_id
 driver.get(URL_CLEAR_LOGIN)
@@ -26,36 +29,47 @@ senha_field.send_keys(SENHA)
 acessar = driver.find_element(By.CLASS_NAME, "bt_signin")
 acessar.click() 
 menu = WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.CLASS_NAME, 'menu')))
-# menu.click()
-# sleep(1)
-# swing_trade = driver.find_element(By.LINK_TEXT, 'Swing Trade')
-# swing_trade.click()
 sleep(1)
 driver.get(URL_CLEAR)
-# print(driver.page_source)
 abev3_value = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, "site")))
+
 driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
+compra = venda = 0
+abev3_book = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//div[@class='cont_detail detail-deal-book']")))
+try:
+    #mostra o livro de ofertas
+    driver.find_element(By.XPATH, "//div[@class='AssetListItem ui-sortable-handle']").click()
+except Exception as e:
+    print(e)
+
+try:
+    #Salva a assinatura eletrônica
+    driver.find_element(By.XPATH, "//label[@class='checkbox bt-toggle-signature']/span[@class='check']").click()
+    sleep(1)
+    driver.find_element(By.XPATH, "//input[@class='relocate-signature-input']").send_keys(ASSINATURA)
+    sleep(1)
+    driver.find_element(By.XPATH, "//a[@class='bt-docket save-signature xsmall']").click()
+except Exception as e:
+    print(e)
+
 while True:
     sleep(2)
-    # abev3_tile = driver.find_element(By.XPATH, "//div[@class='cont_list_equities']")
-    # abev3_tile.click()
-    abev3_book = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//div[@class='cont_detail detail-deal-book']")))
-    abev3_book_prices = driver.find_elements(By.XPATH, "//div[@class='body-scr-book")
-    # print(abev3_book.get_attribute('innerHTML'))
-    for element in abev3_book_prices:
-        print(element.get_attribute('innerHTML'))
-
-
-# driver.get(URL_CLEAR)
-
-# import cloudscraper
-
-# scraper = cloudscraper.create_scraper(delay=5)
-# req = scraper.get(URL_CLEAR)
-# print(req.text)
-
-# import undetected_chromedriver as uc
-
-# driver = uc.Chrome()
-# req = driver.get(URL_CLEAR)
-# print(req.text)
+    try:
+        #Fica clicando em venda e colocando o valor
+        abev3_venda = driver.find_element(By.XPATH, "//li[@class='action-item sell']/a")
+        abev3_venda.click()
+        abev3_qtde = driver.find_element(By.XPATH, "//input[@class='xbig input-quantity id-input-quantity ui-spinner-input']")
+        abev3_qtde.clear()
+        abev3_qtde.send_keys(QUANTIDADE)
+    except Exception as e:
+        print(e)
+    abev3_book_prices = driver.find_elements(By.XPATH, "//tbody[@class='itens']/tr/td[@class='buy-amount buy']/a")
+    for key, element in enumerate(abev3_book_prices):
+        if key == 0:
+            compra = float(str(element.get_attribute('innerHTML')).replace('<var>', '').replace('</var>', '').replace('Aber', '0')) 
+            print(f"ABEV3 compra: {compra}")
+    abev3_book_prices = driver.find_elements(By.XPATH, "//tbody[@class='itens']/tr/td[@class='sell-amount sell']/a")
+    for key, element in enumerate(abev3_book_prices):
+        if key == 0: 
+            venda = float(str(element.get_attribute('innerHTML')).replace('<var>', '').replace('</var>', '').replace('Aber', '0')) 
+            print(f"ABEV3 venda: {venda}")
