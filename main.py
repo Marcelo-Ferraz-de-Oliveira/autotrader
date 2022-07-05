@@ -1,6 +1,15 @@
 import os
 from time import sleep
 from headless_webdriver import *
+import datetime
+
+def time_in_range(start, end, current):
+    """Returns whether current is in the range [start, end]"""
+    return start <= current <= end
+start_time = datetime.time(0, 10, 0)
+end_time = datetime.time(16, 58, 0)
+
+
 
 # URL_CLEAR = os.getenv("URL_CLEAR")
 URL_CLEAR_LOGIN = "https://login.clear.com.br/pit/login/"
@@ -14,11 +23,8 @@ SALDO_EXTERNO = float(str(os.getenv("SALDO_EXTERNO")))
 STEP = 1000
 
 VALOR_COMPRA = 13.65
-QUANTIDADE = 1000
 VALOR_VENDA = 14.35
 
-
-PRECO_MEDIO = 14.61
 PRECO_HIGH_2A = 19
 PRECO_LOW_2A = 12.81
 DIFF_2A = PRECO_HIGH_2A - PRECO_LOW_2A
@@ -89,7 +95,7 @@ while True:
     preco_medio = float(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-average']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
     print(f"Preço médio: R${preco_medio}")
     try:
-        if 0 not in (venda, compra):
+        if 0 not in (venda, compra) and time_in_range(start_time, end_time, datetime.datetime.now().time()) and datetime.datetime.now.weekday() < 5:
             #Fica clicando em compra para não deslogar
             # abev3_venda = driver.find_element(By.XPATH, "//li[@class='action-item buy']/a")
             # abev3_venda.click()
