@@ -72,13 +72,37 @@ try:
 except Exception as e:
     print(e)
 
-quantidade = 0
-saldo_clear = 0
-saldo = 0
-patrimonio = 0
+quantidade = int(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-qty']").get_attribute('innerHTML')).split(" ")[0].replace(".", ""))
+print(f"Quantidade: {quantidade}")
+preco_medio = float(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-average']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+print(f"Preço médio: R${preco_medio}")
+preco_atual = float(driver.find_element(By.XPATH, "//span[@class='symbol-price']").get_attribute('innerHTML').replace(".","").replace(",","."))
+print(f"Preço atual: R$ {preco_atual}")
+driver.switch_to.default_content()
+try:
+    #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
+    driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
+    driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
+    saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+    print(f"Saldo projetado Clear: R${saldo_clear}")
+    saldo = saldo_clear + SALDO_EXTERNO
+    saldo_abev3 = quantidade*preco_atual
+    print(f"Saldo total dinheiro: R${saldo}")
+    patrimonio = saldo + saldo_abev3
+    print(f"Patrimônio total: R${patrimonio}")
+    diff_percentual = 1-((preco_atual-PRECO_LOW_2A)/DIFF_2A)
+    QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/preco_atual
+    print(f"Rebalanceamento (quantidade): {QUANTIDADE}")
+except Exception as e:
+    print(e)
+driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
+if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or not datetime.datetime.now.weekday() < 5: 
+    print(f"Pregão fechado. Horário: {datetime.datetime.now()}")
 
 while True:
     sleep(2)
+    if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or not datetime.datetime.now.weekday() < 5: 
+        continue
     
     abev3_book_prices = driver.find_elements(By.XPATH, "//tbody[@class='itens']/tr/td[@class='buy-amount buy']/a")
     for key, element in enumerate(abev3_book_prices):
@@ -95,7 +119,7 @@ while True:
     preco_medio = float(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-average']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
     print(f"Preço médio: R${preco_medio}")
     try:
-        if 0 not in (venda, compra) and time_in_range(start_time, end_time, datetime.datetime.now().time()) and datetime.datetime.now.weekday() < 5:
+        if 0 not in (venda, compra):
             #Fica clicando em compra para não deslogar
             # abev3_venda = driver.find_element(By.XPATH, "//li[@class='action-item buy']/a")
             # abev3_venda.click()
@@ -122,7 +146,6 @@ while True:
     except Exception as e:
         print(e)
         raise
-    #Pega o saldo total projetado na página principal
     driver.switch_to.default_content()
     try:
         #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
