@@ -7,7 +7,7 @@ def time_in_range(start, end, current):
     """Returns whether current is in the range [start, end]"""
     return start <= current <= end
 start_time = datetime.time(10, 10, 0)
-end_time = datetime.time(16, 58, 0)
+end_time = datetime.time(16, 54, 0)
 
 
 
