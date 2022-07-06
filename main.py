@@ -6,7 +6,7 @@ import datetime
 def time_in_range(start, end, current):
     """Returns whether current is in the range [start, end]"""
     return start <= current <= end
-start_time = datetime.time(10, 0, 0)
+start_time = datetime.time(10, 10, 0)
 end_time = datetime.time(16, 58, 0)
 
 
@@ -131,7 +131,7 @@ while True:
                 abev3_qtde.send_keys(STEP)
                 driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket buy']").click()
                 print(f"Efetuada a compra de {STEP} ABEV3")
-                sleep(2)
+                sleep(5)
 
             if QUANTIDADE <= -STEP: 
                 abev3_venda = driver.find_element(By.XPATH, "//li[@class='action-item sell']/a")
@@ -141,7 +141,7 @@ while True:
                 abev3_qtde.send_keys(STEP)
                 driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket sell']").click()
                 print(f"Efetuada a venda de {QUANTIDADE} ABEV3")
-                sleep(2)
+                sleep(5)
 
     except Exception as e:
         print(e)
