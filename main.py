@@ -6,7 +6,7 @@ import datetime
 def time_in_range(start, end, current):
     """Returns whether current is in the range [start, end]"""
     return start <= current <= end
-start_time = datetime.time(0, 10, 0)
+start_time = datetime.time(10, 0, 0)
 end_time = datetime.time(16, 58, 0)
 
 
@@ -83,7 +83,7 @@ try:
     #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
     driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
     driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
-    saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+    saldo_clear = float(str(WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated']"))).get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
     print(f"Saldo projetado Clear: R${saldo_clear}")
     saldo = saldo_clear + SALDO_EXTERNO
     saldo_abev3 = quantidade*preco_atual
@@ -96,12 +96,12 @@ try:
 except Exception as e:
     print(e)
 driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
-if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or not datetime.datetime.now.weekday() < 5: 
+if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or datetime.datetime.now().weekday() >4 : 
     print(f"Pregão fechado. Horário: {datetime.datetime.now()}")
 
 while True:
     sleep(2)
-    if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or not datetime.datetime.now.weekday() < 5: 
+    if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or datetime.datetime.now().weekday() > 4: 
         continue
     
     abev3_book_prices = driver.find_elements(By.XPATH, "//tbody[@class='itens']/tr/td[@class='buy-amount buy']/a")
@@ -151,7 +151,7 @@ while True:
         #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
         driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
         driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
-        saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+        saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
         saldo = saldo_clear + SALDO_EXTERNO
         saldo_abev3 = quantidade*compra
         patrimonio = saldo + saldo_abev3
