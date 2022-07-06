@@ -34,7 +34,7 @@ QUANTIDADE = 0
 def main():
     driver = get_headless_selenium_webdriver()
     try:
-        session_id = driver.session_id
+        compra = venda = 0
         driver.get(URL_CLEAR_LOGIN)
         cpf_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'Username')))
         cpf_field.send_keys(CPF)
@@ -50,41 +50,24 @@ def main():
         menu = WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.CLASS_NAME, 'menu')))
         sleep(1)
         driver.get(URL_CLEAR)
-        abev3_value = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, "site")))
-
-
-
+        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, "site")))
         driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
-        compra = venda = 0
-        abev3_book = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//div[@class='cont_detail detail-deal-book']")))
-    except Exception as e:
-        driver.close()
-        print(e)
-        main()
-    try:
+        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//div[@class='cont_detail detail-deal-book']")))
         #mostra o livro de ofertas
         driver.find_element(By.XPATH, "//div[@class='AssetListItem ui-sortable-handle']").click()
-    except Exception as e:
-        print(e)
-
-    try:
         #Salva a assinatura eletrônica
         driver.find_element(By.XPATH, "//label[@class='checkbox bt-toggle-signature']/span[@class='check']").click()
         sleep(1)
         driver.find_element(By.XPATH, "//input[@class='relocate-signature-input']").send_keys(ASSINATURA)
         sleep(1)
         driver.find_element(By.XPATH, "//a[@class='bt-docket save-signature xsmall']").click()
-    except Exception as e:
-        print(e)
-
-    quantidade = int(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-qty']").get_attribute('innerHTML')).split(" ")[0].replace(".", ""))
-    print(f"Quantidade: {quantidade}")
-    preco_medio = float(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-average']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
-    print(f"Preço médio: R${preco_medio}")
-    preco_atual = float(driver.find_element(By.XPATH, "//span[@class='symbol-price']").get_attribute('innerHTML').replace(".","").replace(",","."))
-    print(f"Preço atual: R$ {preco_atual}")
-    driver.switch_to.default_content()
-    try:
+        quantidade = int(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-qty']").get_attribute('innerHTML')).split(" ")[0].replace(".", ""))
+        print(f"Quantidade: {quantidade}")
+        preco_medio = float(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-average']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+        print(f"Preço médio: R${preco_medio}")
+        preco_atual = float(driver.find_element(By.XPATH, "//span[@class='symbol-price']").get_attribute('innerHTML').replace(".","").replace(",","."))
+        print(f"Preço atual: R$ {preco_atual}")
+        driver.switch_to.default_content()
         #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
         driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
         driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
@@ -98,11 +81,13 @@ def main():
         diff_percentual = 1-((preco_atual-PRECO_LOW_2A)/DIFF_2A)
         QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/preco_atual
         print(f"Rebalanceamento (quantidade): {QUANTIDADE}")
+        driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
+        if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or datetime.datetime.now().weekday() >4 : 
+            print(f"Pregão fechado. Horário: {datetime.datetime.now()}")
     except Exception as e:
+        driver.close()
         print(e)
-    driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
-    if not time_in_range(start_time, end_time, datetime.datetime.now().time()) or datetime.datetime.now().weekday() >4 : 
-        print(f"Pregão fechado. Horário: {datetime.datetime.now()}")
+        main()
 
     while True:
         sleep(2)
