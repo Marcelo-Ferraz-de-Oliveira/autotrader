@@ -1,7 +1,7 @@
 import os
 from time import sleep
-from headless_webdriver import *
 import datetime
+from webdriver import *
 
 START_TIME = datetime.time(10, 0, 0)
 END_TIME = datetime.time(16, 54, 0)
@@ -13,8 +13,6 @@ DATA_NASCIMENTO=os.getenv("DATA_NASCIMENTO")
 SENHA=os.getenv("SENHA")
 ASSINATURA=os.getenv("ASSINATURA")
 SALDO_EXTERNO = float(str(os.getenv("SALDO_EXTERNO")))
-
-STEP = 1000
 
 VALOR_COMPRA = 13.65
 VALOR_VENDA = 14.35
@@ -29,7 +27,8 @@ def time_in_range(start, end, current):
     return start <= current <= end
 
 def main():
-    driver = get_headless_selenium_webdriver()
+    STEP = float(str(os.getenv("STEP")))
+    driver = get_selenium_webdriver(headless=True)
     try:
         compra = venda = 0
         driver.get(URL_CLEAR_LOGIN)
@@ -68,7 +67,11 @@ def main():
         #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
         driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
         driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
-        saldo_clear = float(str(WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']"))).get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+        saldo_clear = driver.find_elements(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']")
+        if saldo_clear:
+            saldo_clear = float(str(saldo_clear[0].get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+        else:
+            saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
         print(f"Saldo projetado Clear: R${saldo_clear}")
         saldo = saldo_clear + SALDO_EXTERNO
         saldo_abev3 = quantidade*preco_atual
@@ -79,9 +82,6 @@ def main():
         QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/preco_atual
         print(f"Rebalanceamento (quantidade): {QUANTIDADE}")
         driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
-        # if not time_in_range(START_TIME, END_TIME, datetime.datetime.now().time()) or datetime.datetime.now().weekday() >4 : 
-        #     print(f"Pregão fechado. Horário: {datetime.datetime.now()}")
-        #     return None
     except Exception as e:
         driver.close()
         print(e)
@@ -129,7 +129,7 @@ def main():
                     abev3_qtde.clear()
                     abev3_qtde.send_keys(STEP)
                     driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket sell']").click()
-                    print(f"Efetuada a venda de {QUANTIDADE} ABEV3")
+                    print(f"Efetuada a venda de {STEP} ABEV3")
                     sleep(5)
 
         except Exception as e:
@@ -140,18 +140,26 @@ def main():
             #Clica uma vez no saldo para aparecer os elementos do saldo. Clica de novo para tirar o saldo da tela
             driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
             driver.find_element(By.XPATH, "//a[@data-wa='pit;topo-fixo;saldo-conta']").click()
-            saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+            saldo_clear = driver.find_elements(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated small-text']")
+            if saldo_clear:
+                saldo_clear = float(str(saldo_clear[0].get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
+            else:
+                saldo_clear = float(str(driver.find_element(By.XPATH, "//soma-paragraph[@class='total-amount total_val elipsed-val soma-paragraph hydrated']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
             saldo = saldo_clear + SALDO_EXTERNO
             saldo_abev3 = quantidade*compra
             patrimonio = saldo + saldo_abev3
             diff_percentual = 1-((compra-PRECO_LOW_2A)/DIFF_2A)
             QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/compra
+            STEP = float(str(os.getenv("STEP")))
             print(f"Saldo projetado Clear: R${saldo_clear}")
             print(f"Saldo total dinheiro: R${saldo}")
             print(f"Patrimônio total: R${patrimonio}")
             print(f"Rebalanceamento (quantidade): {QUANTIDADE}")
+            print(f"Step: {STEP}")
         except Exception as e:
+            driver.close()
             print(e)
+            main()
         driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
 
 if __name__ == "__main__":
