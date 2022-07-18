@@ -27,7 +27,7 @@ def time_in_range(start, end, current):
     return start <= current <= end
 
 def main():
-    STEP = float(str(os.getenv("STEP")))
+    STEP = int(str(os.getenv("STEP")))
     driver = get_selenium_webdriver(headless=True)
     try:
         compra = venda = 0
@@ -50,6 +50,7 @@ def main():
         driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
         WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//div[@class='cont_detail detail-deal-book']")))
         #mostra o livro de ofertas
+        sleep(15)
         driver.find_element(By.XPATH, "//div[@class='AssetListItem ui-sortable-handle']").click()
         #Salva a assinatura eletrônica
         driver.find_element(By.XPATH, "//label[@class='checkbox bt-toggle-signature']/span[@class='check']").click()
@@ -81,6 +82,7 @@ def main():
         diff_percentual = 1-((preco_atual-PRECO_LOW_2A)/DIFF_2A)
         QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/preco_atual
         print(f"Rebalanceamento (quantidade): {QUANTIDADE}")
+        print(f"Step: {STEP}")
         driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
     except Exception as e:
         driver.close()
@@ -122,7 +124,7 @@ def main():
                     print(f"Efetuada a compra de {STEP} ABEV3")
                     sleep(5)
 
-                if QUANTIDADE <= -STEP: 
+                if QUANTIDADE <= -STEP and compra <= preco_medio: 
                     abev3_venda = driver.find_element(By.XPATH, "//li[@class='action-item sell']/a")
                     abev3_venda.click()
                     abev3_qtde = driver.find_element(By.XPATH, "//input[@class='xbig input-quantity id-input-quantity ui-spinner-input']")
@@ -150,7 +152,7 @@ def main():
             patrimonio = saldo + saldo_abev3
             diff_percentual = 1-((compra-PRECO_LOW_2A)/DIFF_2A)
             QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/compra
-            STEP = float(str(os.getenv("STEP")))
+            STEP = int(str(os.getenv("STEP")))
             print(f"Saldo projetado Clear: R${saldo_clear}")
             print(f"Saldo total dinheiro: R${saldo}")
             print(f"Patrimônio total: R${patrimonio}")
