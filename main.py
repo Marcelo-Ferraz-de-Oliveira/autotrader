@@ -7,8 +7,11 @@ START_TIME = datetime.time(10, 0, 0)
 END_TIME = datetime.time(16, 54, 0)
 
 URL_CLEAR_LOGIN = "https://login.clear.com.br/pit/login/"
+URL_CLEAR_TESOURO = "https://pro.clear.com.br/#renda-fixa/tesouro-direto"
+URL_CLEAR_PEDIDO_LIMITE = "https://forms.office.com/Pages/ResponsePage.aspx?id=BeRWz7DSZkKyEKoEY2thYYvZn_U3ldBGtrKRP1Fh5WxUMVU1OVg0MEFBVDdHNlNSR1c0MjJGS1FOMC4u"
 URL_CLEAR = "https://pro.clear.com.br/#renda-variavel/swing-trade"
-CPF=os.getenv("CPF")
+CODIGO_CLIENTE=os.getenv("CODIGO_CLIENTE")
+CPF=str(os.getenv("CPF"))
 DATA_NASCIMENTO=os.getenv("DATA_NASCIMENTO")
 SENHA=os.getenv("SENHA")
 ASSINATURA=os.getenv("ASSINATURA")
@@ -28,7 +31,7 @@ def time_in_range(start, end, current):
 
 def main():
     STEP = int(str(os.getenv("STEP")))
-    driver = get_selenium_webdriver(headless=True)
+    driver = get_selenium_webdriver(headless=False)
     try:
         compra = venda = 0
         driver.get(URL_CLEAR_LOGIN)
@@ -45,6 +48,27 @@ def main():
         acessar.click() 
         menu = WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.CLASS_NAME, 'menu')))
         sleep(1)
+        #Pega o saldo do tesouro direto
+        driver.get(URL_CLEAR_TESOURO)
+        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, "site")))
+        driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
+        driver.find_element(By.XPATH, "//a[@class='btn-top-res btn-results btn-icon btn-text']").click()
+        sleep(2)
+        saldo_tesouro = float(driver.find_element(By.XPATH, "//div[@class='text-value position-value-net']").get_attribute('innerHTML').replace("R$ ","").replace(".", "").replace(",","."))
+        print(saldo_tesouro)
+        
+        #Solicita o limite se ele não estiver sido solicitado antes
+        # if saldo_clear < saldo_tesouro:
+        #     driver.get(URL_CLEAR_PEDIDO_LIMITE)
+        #     campos = driver.find_elements(By.XPATH, "//input[@class='office-form-question-textbox office-form-textfield-input form-control office-form-theme-focus-border border-no-radius']")
+        #     campos[0].send_keys(CODIGO_CLIENTE)
+        #     campos[1].send_keys(CPF.replace(".", "").replace("-", ""))
+        #     campos[2].send_keys(str(saldo_tesouro).replace(".", ","))
+
+
+
+
+        #Muda para o swing trade e começa as operações
         driver.get(URL_CLEAR)
         WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, "site")))
         driver.switch_to.frame(driver.find_element(By.NAME, "content-page"))
@@ -98,6 +122,7 @@ def main():
         if is_leilao:
             print(f"ABEV3 em Leilão")
             continue
+
         abev3_book_prices = driver.find_elements(By.XPATH, "//tbody[@class='itens']/tr/td[@class='buy-amount buy']/a")
         for key, element in enumerate(abev3_book_prices):
             if key == 0:
@@ -113,14 +138,14 @@ def main():
         preco_medio = float(str(driver.find_element(By.XPATH, "//div[@class='value detailed-net-average']").get_attribute('innerHTML')).replace("R$ ","").replace(".", "").replace(",","."))
         print(f"Preço médio: R${preco_medio}")
         try:
-            if 0 not in (venda, compra):
+            if 0 not in (venda, compra) and saldo_clear >= saldo_tesouro:
                 if QUANTIDADE >= STEP: 
                     abev3_venda = driver.find_element(By.XPATH, "//li[@class='action-item buy']/a")
                     abev3_venda.click()
                     abev3_qtde = driver.find_element(By.XPATH, "//input[@class='xbig input-quantity id-input-quantity ui-spinner-input']")
                     abev3_qtde.clear()
                     abev3_qtde.send_keys(STEP)
-                    driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket buy']").click()
+                    # driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket buy']").click()
                     print(f"Efetuada a compra de {STEP} ABEV3")
                     sleep(5)
 
@@ -130,7 +155,7 @@ def main():
                     abev3_qtde = driver.find_element(By.XPATH, "//input[@class='xbig input-quantity id-input-quantity ui-spinner-input']")
                     abev3_qtde.clear()
                     abev3_qtde.send_keys(STEP)
-                    driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket sell']").click()
+                    # driver.find_element(By.XPATH, "//button[@class='btn-checkout bt-docket sell']").click()
                     print(f"Efetuada a venda de {STEP} ABEV3")
                     sleep(5)
 
@@ -153,7 +178,9 @@ def main():
             diff_percentual = 1-((compra-PRECO_LOW_2A)/DIFF_2A)
             QUANTIDADE = ((patrimonio*diff_percentual)-(quantidade*preco_medio))/compra
             STEP = int(str(os.getenv("STEP")))
+            print(f"Saldo Tesouro Direto: R${saldo_tesouro}")
             print(f"Saldo projetado Clear: R${saldo_clear}")
+            if saldo_clear < saldo_tesouro: print("Limite ainda não liberado")
             print(f"Saldo total dinheiro: R${saldo}")
             print(f"Patrimônio total: R${patrimonio}")
             print(f"Rebalanceamento (quantidade): {QUANTIDADE}")
